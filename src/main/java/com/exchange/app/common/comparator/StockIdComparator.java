@@ -1,4 +1,4 @@
-package common.comparator;
+package com.exchange.app.common.comparator;
 
 import java.util.Comparator;
 
