@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.exchange.app.stock.model.dto.StockInfoDTO;
 import com.exchange.app.stock.service.StockInfoService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @RestController
 @RequestMapping(value = "/api/v1/stock")
@@ -28,7 +29,7 @@ public class StockController
     }
 
     @PostMapping
-    public ResponseEntity<String> createStockInfo(@RequestBody StockInfoDTO stockInfoDTO)
+    public ResponseEntity<String> createStockInfo(@RequestBody StockInfoDTO stockInfoDTO) throws JsonProcessingException
     {
         stockInfoService.createStock(stockInfoDTO);
         return new ResponseEntity<>("Stock created successfully.", HttpStatus.CREATED);
@@ -36,7 +37,7 @@ public class StockController
 
     @PutMapping
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<String> updateStockInfo(@RequestBody StockInfoDTO stockInfoDTO)
+    public ResponseEntity<String> updateStockInfo(@RequestBody StockInfoDTO stockInfoDTO) throws JsonProcessingException
     {
         stockInfoService.updateStock(stockInfoDTO);
         return new ResponseEntity<>("Stock updated successfully.", HttpStatus.OK);

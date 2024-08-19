@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,8 @@ import jakarta.transaction.Transactional;
 @Service
 public class StockExchangeInfoService
 {
+    private static final Logger logger = LoggerFactory.getLogger(StockExchangeInfoService.class);
+
     private StockExchangeInfoRepository stockExchangeInfoRepository;
     private StockInfoRepository stockInfoRepository;
     private StockIdComparator stockIdComparator;
@@ -37,6 +41,7 @@ public class StockExchangeInfoService
     @Transactional
     public StockExchangeInfo getStockExchangeInfo(String exchangeName)
     {
+        logger.info("Getting stock info for exchange:{}", exchangeName);
         Optional<StockExchangeInfo> stockExchangeInfo = stockExchangeInfoRepository.findByName(exchangeName);
         if (stockExchangeInfo.isPresent())
         {
@@ -44,12 +49,15 @@ public class StockExchangeInfoService
         }
         else
         {
+            logger.info("Exchange not found");
             throw new EntityNotFoundException("No Stock Information for Exchange : " + exchangeName);
         }
     }
 
     public void addStockToExchange(String exchangeName, StockExchangeInfoDTO stockExchangeInfoDTO, String stockName)
     {
+        logger.info("Adding stock : {} to Exchange : {}", stockName, exchangeName);
+
         Optional<StockInfo> stockInfo = stockInfoRepository.findByName(stockName);
         if (!stockInfo.isPresent())
         {
@@ -58,7 +66,7 @@ public class StockExchangeInfoService
         Optional<StockExchangeInfo> stockExchangeInfo = stockExchangeInfoRepository.findByName(exchangeName);
         if (stockExchangeInfo.isPresent())
         {
-            updateExchangeInfo(exchangeName, stockExchangeInfoDTO, stockInfo, stockExchangeInfo);
+            updateExchangeInfo(exchangeName, stockExchangeInfo.get(), stockInfo.get());
         }
         else
         {
@@ -67,41 +75,10 @@ public class StockExchangeInfoService
         }
     }
 
-    private void createNewExchangeInfo(StockExchangeInfoDTO stockExchangeInfoDTO, Optional<StockInfo> stockInfo)
-    {
-        StockExchangeInfo newStockExchangeInfo = new StockExchangeInfo();
-        newStockExchangeInfo.setDescription(stockExchangeInfoDTO.getDescription());
-        newStockExchangeInfo.setName(stockExchangeInfoDTO.getName());
-        List<StockInfo> listOfStocks = new ArrayList<>();
-        listOfStocks.add(stockInfo.get());
-        newStockExchangeInfo.setStocks(listOfStocks);
-        stockExchangeInfoRepository.save(newStockExchangeInfo);
-    }
-
-    private void updateExchangeInfo(String exchangeName, StockExchangeInfoDTO stockExchangeInfoDTO,
-            Optional<StockInfo> stockInfo, Optional<StockExchangeInfo> stockExchangeInfo)
-    {
-        StockExchangeInfo stockExchangeInfoEntity = stockExchangeInfo.get();
-        List<StockInfo> stockList = stockExchangeInfoEntity.getStocks();
-
-        StockInfo activeStock = stockInfo.get();
-        boolean contains = stockList.stream().anyMatch(item -> stockIdComparator.compare(item, activeStock) == 0);
-        if (!contains)
-        {
-            stockList.add(activeStock);
-            checkLiveness(stockExchangeInfoEntity, stockList);
-            stockExchangeInfoEntity.setStocks(stockList);
-            stockExchangeInfoRepository.save(stockExchangeInfoEntity);
-        }
-        else
-        {
-            throw new EntityAlreadyExistException(
-                    "Stock: " + stockExchangeInfoDTO.getName() + " is already exist on the exchange : " + exchangeName);
-        }
-    }
-
     public void deleteStockFromExchange(String exchangeName, String stockName)
     {
+        logger.info("Deleting stock : {} from Exchange : {}", stockName, exchangeName);
+
         Optional<StockExchangeInfo> stockExchangeInfo = stockExchangeInfoRepository.findByName(exchangeName);
         if (stockExchangeInfo.isPresent())
         {
@@ -126,6 +103,37 @@ public class StockExchangeInfoService
         else
         {
             throw new EntityNotFoundException("No Exchange Information for Exchange : " + exchangeName);
+        }
+    }
+
+    private void createNewExchangeInfo(StockExchangeInfoDTO stockExchangeInfoDTO, Optional<StockInfo> stockInfo)
+    {
+        StockExchangeInfo newStockExchangeInfo = new StockExchangeInfo();
+        newStockExchangeInfo.setDescription(stockExchangeInfoDTO.getDescription());
+        newStockExchangeInfo.setName(stockExchangeInfoDTO.getName());
+        List<StockInfo> listOfStocks = new ArrayList<>();
+        listOfStocks.add(stockInfo.get());
+        newStockExchangeInfo.setStocks(listOfStocks);
+        stockExchangeInfoRepository.save(newStockExchangeInfo);
+    }
+
+    private void updateExchangeInfo(String exchangeName, StockExchangeInfo stockExchangeInfo, StockInfo stockInfo)
+    {
+        logger.info("Updating stock : {} from Exchange : {}", stockInfo.getName(), exchangeName);
+
+        List<StockInfo> stockList = stockExchangeInfo.getStocks();
+        boolean contains = stockList.stream().anyMatch(item -> stockIdComparator.compare(item, stockInfo) == 0);
+        if (!contains)
+        {
+            stockList.add(stockInfo);
+            checkLiveness(stockExchangeInfo, stockList);
+            stockExchangeInfo.setStocks(stockList);
+            stockExchangeInfoRepository.save(stockExchangeInfo);
+        }
+        else
+        {
+            throw new EntityAlreadyExistException(
+                    "Stock: " + stockExchangeInfo.getName() + " is already exist on the exchange : " + exchangeName);
         }
     }
 
