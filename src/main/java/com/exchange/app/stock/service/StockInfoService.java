@@ -35,7 +35,8 @@ public class StockInfoService
     public void createStock(StockInfoDTO stockInfoDTO) throws JsonProcessingException
     {
         logger.info("Creating a stock");
-        logger.debug("Input :{}", objectMapper.writeValueAsString(stockInfoDTO));
+        // logger.debug("Input :{}",
+        // objectMapper.writeValueAsString(stockInfoDTO));
 
         Optional<StockInfo> stockInfoEntity = stockInfoRepository.findByName(stockInfoDTO.getName());
         if (!stockInfoEntity.isPresent())

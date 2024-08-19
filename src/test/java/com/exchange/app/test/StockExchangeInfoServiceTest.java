@@ -1,24 +1,24 @@
 package com.exchange.app.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.testng.annotations.Test;
 
 import com.exchange.app.common.comparator.StockIdComparator;
 import com.exchange.app.common.error.EntityAlreadyExistException;
@@ -37,6 +37,7 @@ class StockExchangeInfoServiceTest
     private static final String exchangeDescrpiption = "NASDAQ Exchange";
     private static final String exchangeName = "NASDAQ";
     private static final String stockName = "AAPL";
+
     @Mock
     private StockExchangeInfoRepository stockExchangeInfoRepository;
 
@@ -53,6 +54,7 @@ class StockExchangeInfoServiceTest
     void setUp()
     {
         MockitoAnnotations.openMocks(this);
+        stockExchangeInfoService = new StockExchangeInfoService(stockExchangeInfoRepository, stockInfoRepository);
     }
 
     @Test
@@ -82,7 +84,6 @@ class StockExchangeInfoServiceTest
     @Test
     void addStockToExchange_NewStockInNewExchange_CreatesNewExchangeInfo()
     {
-
         StockExchangeInfoDTO dto = StockExchangeInfoDTO.builder().name(exchangeName).description(exchangeDescrpiption)
                 .build();
 
@@ -101,7 +102,6 @@ class StockExchangeInfoServiceTest
     @Test
     void addStockToExchange_ExistingStockInExistingExchange_ThrowsEntityAlreadyExistException()
     {
-
         StockExchangeInfoDTO dto = StockExchangeInfoDTO.builder().name(exchangeName).description(exchangeDescrpiption)
                 .build();
         StockInfo stockInfo = StockInfo.builder().name(stockName).build();
@@ -144,7 +144,6 @@ class StockExchangeInfoServiceTest
     @Test
     void deleteStockFromExchange_NonExistingStockInExchange_ThrowsEntityNotFoundException()
     {
-
         StockInfo stockInfo = StockInfo.builder().name(stockName).build();
         StockExchangeInfo stockExchangeInfo = StockExchangeInfo.builder().name(exchangeName).stocks(new ArrayList<>())
                 .build();

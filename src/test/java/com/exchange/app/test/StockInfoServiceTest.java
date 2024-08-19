@@ -10,10 +10,10 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.testng.annotations.Test;
 
 import com.exchange.app.common.error.EntityAlreadyExistException;
 import com.exchange.app.stock.model.dto.StockInfoDTO;
