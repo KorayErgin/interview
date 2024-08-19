@@ -1,6 +1,5 @@
 package com.exchange.app.stock.service;
 
-import java.util.Date;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -41,13 +40,15 @@ public class StockInfoService
         Optional<StockInfo> stockInfoEntity = stockInfoRepository.findByName(stockInfoDTO.getName());
         if (!stockInfoEntity.isPresent())
         {
-            stockInfoRepository.save(mapFromStockInfoDTOToStockInfoEntity(new StockInfo(), stockInfoDTO));
+            StockInfo newStockInfo = StockInfo.builder().name(stockInfoDTO.getName())
+                    .description(stockInfoDTO.getDescription()).currentPrice(stockInfoDTO.getCurrentPrice()).build();
+            stockInfoRepository.save(newStockInfo);
             logger.info("Stock succesfully created.");
 
         }
         else
         {
-            logger.info("Stock already exist.");
+            logger.info("Stock {} already exist.", stockInfoDTO.getName());
             throw new EntityAlreadyExistException("There is already exist stock : " + stockInfoDTO.getName());
         }
     }
@@ -66,7 +67,7 @@ public class StockInfoService
         }
         else
         {
-            logger.info("Stock not found.");
+            logger.info("Stock {} not found.", stockName);
             throw new EntityNotFoundException("There is no record for stock : " + stockName);
         }
     }
@@ -79,24 +80,16 @@ public class StockInfoService
         Optional<StockInfo> stockInfoEntity = stockInfoRepository.findByName(stockInfoDTO.getName());
         if (stockInfoEntity.isPresent())
         {
-            StockInfo stockInfo = stockInfoEntity.get();
-            stockInfo = mapFromStockInfoDTOToStockInfoEntity(stockInfo, stockInfoDTO);
-            stockInfoRepository.save(stockInfo);
+            StockInfo stock = stockInfoEntity.get().toBuilder().name(stockInfoDTO.getName())
+                    .description(stockInfoDTO.getDescription()).currentPrice(stockInfoDTO.getCurrentPrice()).build();
+            stockInfoRepository.save(stock);
             logger.info("Stock succesfully updated.");
         }
         else
         {
-            logger.info("Stock not found.");
+            logger.info("Stock {} not found.", stockInfoDTO.getName());
             throw new EntityNotFoundException("There is no record for stock : " + stockInfoDTO.getName());
         }
     }
 
-    private StockInfo mapFromStockInfoDTOToStockInfoEntity(StockInfo stockInfo, StockInfoDTO stockInfoDTO)
-    {
-        stockInfo.setName(stockInfoDTO.getName());
-        stockInfo.setDescription(stockInfoDTO.getDescription());
-        stockInfo.setCurrentPrice(stockInfoDTO.getCurrentPrice());
-        stockInfo.setLastUpdateTime(new Date());
-        return stockInfo;
-    }
 }

@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.exchange.app.common.comparator.StockIdComparator;
@@ -25,6 +26,8 @@ public class StockExchangeInfoService
 {
     private static final Logger logger = LoggerFactory.getLogger(StockExchangeInfoService.class);
 
+    @Value("${app.liveRequiredNumber:5}")
+    private int liveRequiredNumber;
     private StockExchangeInfoRepository stockExchangeInfoRepository;
     private StockInfoRepository stockInfoRepository;
     private StockIdComparator stockIdComparator;
@@ -91,7 +94,7 @@ public class StockExchangeInfoService
             if (contains)
             {
                 stockList.remove(stock);
-                stockExchangeInfoEntity.setStocks(stockList);
+                stockExchangeInfoEntity.toBuilder().stocks(stockList).build();
                 stockExchangeInfoRepository.save(stockExchangeInfoEntity);
             }
             else
@@ -108,12 +111,10 @@ public class StockExchangeInfoService
 
     private void createNewExchangeInfo(StockExchangeInfoDTO stockExchangeInfoDTO, Optional<StockInfo> stockInfo)
     {
-        StockExchangeInfo newStockExchangeInfo = new StockExchangeInfo();
-        newStockExchangeInfo.setDescription(stockExchangeInfoDTO.getDescription());
-        newStockExchangeInfo.setName(stockExchangeInfoDTO.getName());
         List<StockInfo> listOfStocks = new ArrayList<>();
         listOfStocks.add(stockInfo.get());
-        newStockExchangeInfo.setStocks(listOfStocks);
+        StockExchangeInfo newStockExchangeInfo = StockExchangeInfo.builder().name(stockExchangeInfoDTO.getName())
+                .description(stockExchangeInfoDTO.getDescription()).stocks(listOfStocks).build();
         stockExchangeInfoRepository.save(newStockExchangeInfo);
     }
 
@@ -127,7 +128,7 @@ public class StockExchangeInfoService
         {
             stockList.add(stockInfo);
             checkLiveness(stockExchangeInfo, stockList);
-            stockExchangeInfo.setStocks(stockList);
+            stockExchangeInfo.toBuilder().stocks(stockList).build();
             stockExchangeInfoRepository.save(stockExchangeInfo);
         }
         else
@@ -139,13 +140,13 @@ public class StockExchangeInfoService
 
     private void checkLiveness(StockExchangeInfo stockExchangeInfoEntity, List<StockInfo> stockList)
     {
-        if (stockList.size() >= 5)
+        if (stockList.size() >= liveRequiredNumber)
         {
-            stockExchangeInfoEntity.setLiveInMarket(true);
+            stockExchangeInfoEntity.toBuilder().isLiveInMarket(true);
         }
         else
         {
-            stockExchangeInfoEntity.setLiveInMarket(false);
+            stockExchangeInfoEntity.toBuilder().isLiveInMarket(false);
         }
     }
 

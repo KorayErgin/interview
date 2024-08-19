@@ -14,7 +14,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
 
+@Getter
+@ToString
+@Builder(toBuilder = true)
 @Entity
 @Table(name = "stocks_info")
 public class StockInfo
@@ -40,63 +46,4 @@ public class StockInfo
     @JoinColumn(name = "stock_exchange_id")
     private StockExchangeInfo stockExchangeInfo;
 
-    public Long getStockID()
-    {
-        return stockID;
-    }
-
-    public void setStockID(Long stockID)
-    {
-        this.stockID = stockID;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
-    public BigDecimal getCurrentPrice()
-    {
-        return currentPrice;
-    }
-
-    public void setCurrentPrice(BigDecimal currentPrice)
-    {
-        this.currentPrice = currentPrice;
-    }
-
-    public Date getLastUpdateTime()
-    {
-        return lastUpdateTime;
-    }
-
-    public void setLastUpdateTime(Date lastUpdateTime)
-    {
-        this.lastUpdateTime = lastUpdateTime;
-    }
-
-    public StockExchangeInfo getStockExchangeInfo()
-    {
-        return stockExchangeInfo;
-    }
-
-    public void setStockExchangeInfo(StockExchangeInfo stockExchangeInfo)
-    {
-        this.stockExchangeInfo = stockExchangeInfo;
-    }
 }

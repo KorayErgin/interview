@@ -12,7 +12,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
 
+@Getter
+@ToString
+@Builder(toBuilder = true)
 @Entity
 @Table(name = "stock_exchanges_info")
 public class StockExchangeInfo
@@ -34,53 +40,4 @@ public class StockExchangeInfo
     @OneToMany(mappedBy = "stockExchangeInfo", cascade = CascadeType.ALL)
     private List<StockInfo> stocks;
 
-    public Long getId()
-    {
-        return id;
-    }
-
-    public void setId(Long id)
-    {
-        this.id = id;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getDescription()
-    {
-        return description;
-    }
-
-    public void setDescription(String description)
-    {
-        this.description = description;
-    }
-
-    public boolean isLiveInMarket()
-    {
-        return isLiveInMarket;
-    }
-
-    public void setLiveInMarket(boolean isLiveInMarket)
-    {
-        this.isLiveInMarket = isLiveInMarket;
-    }
-
-    public List<StockInfo> getStocks()
-    {
-        return stocks;
-    }
-
-    public void setStocks(List<StockInfo> stocks)
-    {
-        this.stocks = stocks;
-    }
 }
