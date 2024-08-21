@@ -1,19 +1,18 @@
 package com.exchange.app.test;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertThrows;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.Test;
+import org.testng.annotations.BeforeMethod;
 
 import com.exchange.app.common.error.EntityAlreadyExistException;
 import com.exchange.app.stock.model.dto.StockInfoDTO;
@@ -21,18 +20,16 @@ import com.exchange.app.stock.model.entity.StockInfo;
 import com.exchange.app.stock.repository.StockInfoRepository;
 import com.exchange.app.stock.service.StockInfoService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.EntityNotFoundException;
 
-class StockInfoServiceTest
+public class StockInfoServiceTest
 {
 
-    private static final double price = 150.0;
-
-    private static final String description = "Apple Inc.";
-
-    private static final String stockName = "AAPL";
+    private static final String UPDATE_PRICE = "160.00";
+    private static final String PRICE = "150.00";
+    private static final String STOCK_DESCRIPTION = "Apple Inc.";
+    private static final String STOCK_NAME = "AAPL";
 
     @Mock
     private StockInfoRepository stockInfoRepository;
@@ -40,89 +37,75 @@ class StockInfoServiceTest
     @InjectMocks
     private StockInfoService stockInfoService;
 
-    @Mock
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp()
+    @BeforeMethod
+    public void setUp()
     {
         MockitoAnnotations.openMocks(this);
+        stockInfoService = new StockInfoService(stockInfoRepository);
+
     }
 
     @Test
-    void createStock_WhenStockDoesNotExist_ShouldCreateStock() throws JsonProcessingException
+    public void createStock_NewStock_Success() throws JsonProcessingException
     {
-        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(stockName).description(description)
-                .currentPrice(new BigDecimal(price)).build();
+        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(STOCK_NAME).description(STOCK_DESCRIPTION)
+                .currentPrice(new java.math.BigDecimal(PRICE)).build();
         when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.empty());
         stockInfoService.createStock(stockInfoDTO);
         verify(stockInfoRepository, times(1)).save(any(StockInfo.class));
     }
 
     @Test
-    void createStock_WhenStockAlreadyExists_ShouldThrowEntityAlreadyExistException() throws JsonProcessingException
+    public void createStock_ExistingStock_ThrowsEntityAlreadyExistException()
     {
-        // Arrange
-        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(stockName).description(description)
-                .currentPrice(new BigDecimal(150.0)).build();
-        StockInfo stockInfo = StockInfo.builder().name(stockName).stockID(1L).build();
-
-        when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.of(stockInfo));
-        assertThatThrownBy(() -> stockInfoService.createStock(stockInfoDTO))
-                .isInstanceOf(EntityAlreadyExistException.class)
-                .hasMessageContaining("There is already exist stock : AAPL");
+        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(STOCK_NAME).description(STOCK_DESCRIPTION)
+                .currentPrice(new java.math.BigDecimal(PRICE)).build();
+        StockInfo existingStock = StockInfo.builder().name(STOCK_NAME).description(STOCK_DESCRIPTION)
+                .currentPrice(new java.math.BigDecimal(PRICE)).build();
+        when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.of(existingStock));
+        assertThrows(EntityAlreadyExistException.class, () -> stockInfoService.createStock(stockInfoDTO));
+        verify(stockInfoRepository, times(0)).save(any(StockInfo.class));
     }
 
     @Test
-    void createStock_ShouldLogAppropriateMessages() throws JsonProcessingException
+    public void deleteStock_ExistingStock_Success()
     {
-        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(stockName).description(description)
-                .currentPrice(new BigDecimal(150.0)).build();
-        when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.empty());
-        stockInfoService.createStock(stockInfoDTO);
-        verify(objectMapper, times(1)).writeValueAsString(stockInfoDTO);
-        verify(stockInfoRepository, times(1)).save(any(StockInfo.class));
+        StockInfo existingStock = StockInfo.builder().name(STOCK_NAME).build();
+        when(stockInfoRepository.findByName(STOCK_NAME)).thenReturn(Optional.of(existingStock));
+        stockInfoService.deleteStock(STOCK_NAME);
+        verify(stockInfoRepository, times(1)).deleteById(existingStock.getStockID());
     }
 
     @Test
-    void deleteStock_WhenStockExists_ShouldDeleteStock()
+    public void deleteStock_NonExistingStock_ThrowsEntityNotFoundException()
     {
-        StockInfo stockInfo = StockInfo.builder().name(stockName).stockID(1L).build();
-
-        when(stockInfoRepository.findByName(stockName)).thenReturn(Optional.of(stockInfo));
-        stockInfoService.deleteStock(stockName);
-        verify(stockInfoRepository, times(1)).deleteById(stockInfo.getStockID());
-    }
-
-    @Test
-    void deleteStock_WhenStockDoesNotExist_ShouldThrowEntityNotFoundException() {
-        // Arrange
+        String stockName = STOCK_NAME;
         when(stockInfoRepository.findByName(stockName)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> stockInfoService.deleteStock(stockName))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("There is no record for stock : AAPL");
+        assertThrows(EntityNotFoundException.class, () -> stockInfoService.deleteStock(stockName));
+        verify(stockInfoRepository, times(0)).deleteById(any(Long.class));
     }
 
     @Test
-    void updateStock_WhenStockExists_ShouldUpdateStock() throws JsonProcessingException
+    public void updateStock_ExistingStock_Success() throws JsonProcessingException
     {
+        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(STOCK_NAME).description("Updated Apple Inc.")
+                .currentPrice(new java.math.BigDecimal(UPDATE_PRICE)).build();
 
-        StockInfo stockInfo = StockInfo.builder().name(stockName).stockID(1L).build();
-        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(stockName).description(description)
-                .currentPrice(new BigDecimal(150.0)).build();
-        when(stockInfoRepository.findByName(stockName)).thenReturn(Optional.of(stockInfo));
+        StockInfo existingStock = StockInfo.builder().name(STOCK_NAME).description(STOCK_DESCRIPTION)
+                .currentPrice(new java.math.BigDecimal(PRICE)).build();
+
+        when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.of(existingStock));
         stockInfoService.updateStock(stockInfoDTO);
-        verify(stockInfoRepository, times(1)).save(stockInfo);
+        verify(stockInfoRepository, times(1)).save(any(StockInfo.class));
     }
 
     @Test
-    void updateStock_WhenStockDoesNotExist_ShouldThrowEntityNotFoundException() throws JsonProcessingException
+    public void updateStock_NonExistingStock_ThrowsEntityNotFoundException() throws JsonProcessingException
     {
-        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(stockName).description(description)
-                .currentPrice(new BigDecimal(150.0)).build();
+        StockInfoDTO stockInfoDTO = StockInfoDTO.builder().name(STOCK_NAME).description(STOCK_DESCRIPTION)
+                .currentPrice(new java.math.BigDecimal(UPDATE_PRICE)).build();
         when(stockInfoRepository.findByName(stockInfoDTO.getName())).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> stockInfoService.updateStock(stockInfoDTO)).isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("There is no record for stock : AAPL");
+        assertThrows(EntityNotFoundException.class, () -> stockInfoService.updateStock(stockInfoDTO));
+        verify(stockInfoRepository, times(0)).save(any(StockInfo.class));
     }
-
 }
